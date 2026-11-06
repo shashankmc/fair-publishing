@@ -30,7 +30,12 @@ Issues = "https://github.com/shashankmc/fair-publishing/issues"
 Changelog = "https://github.com/shashankmc/fair-publishing/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
-test = ["pytest>=7.4"]
+test = [
+    "pytest>=7.4",
+    "Flask-SQLAlchemy>=3.0.5,<4",
+    "PyYAML>=6.0",  # tests/test_openapi.py reads docs/openapi.yaml
+    "alembic>=1.13",  # tests/test_migrations.py runs the revision; hosts supply it at runtime
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]

@@ -1,0 +1,178 @@
+openapi: 3.1.0
+info:
+  title: fair-publishing HTTP API
+  version: 0.1.0
+  description: >-
+    Mounted by the host under /api/publishing. Every route needs the host's
+    sign-in; the host's identity resolver gives the owner. Errors are
+    {error, code} with the HTTP status below; `error` is shown to the user.
+paths:
+  /api/publishing/config:
+    get:
+      summary: What this host allows.
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Config" }
+  /api/publishing/token:
+    get:
+      summary: Whether the user's repository token is saved. The token is never returned.
+      responses:
+        "200": { content: { application/json: { schema: { type: object, properties: { connected: { type: boolean } } } } } }
+    put:
+      summary: Save the user's personal repository token (write-only).
+      requestBody: { content: { application/json: { schema: { type: object, required: [token], properties: { token: { type: string } } } } } }
+      responses:
+        "200": { description: "{connected: true}" }
+        "400": { description: "Empty token (code token_missing)" }
+    delete:
+      summary: Forget the token.
+      responses: { "204": { description: "Deleted" } }
+  /api/publishing/artefacts:
+    get:
+      summary: What the user can publish, from the host's artefact provider.
+      responses:
+        "200": { content: { application/json: { schema: { type: object, properties: { artefacts: { type: array, items: { $ref: "#/components/schemas/Artefact" } } } } } } }
+  /api/publishing/card-draft:
+    post:
+      summary: A first draft of the dataset or model card. Drafted by an LLM when the host offers one, else from a template; the user must approve it before publishing.
+      requestBody: { content: { application/json: { schema: { $ref: "#/components/schemas/ArtefactRef" } } } }
+      responses:
+        "200": { content: { application/json: { schema: { type: object, properties: { card: { type: string }, source: { type: string, enum: [llm, template] } } } } } }
+        "404": { description: "Not the user's artefact" }
+  /api/publishing/preview:
+    post:
+      summary: What would be deposited, without depositing. Checks everything publish checks except the attestation and the token.
+      requestBody: { content: { application/json: { schema: { $ref: "#/components/schemas/PublishRequest" } } } }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  datacite: { type: object, description: "DataCite metadata (attributes)" }
+                  ro_crate: { type: object, description: "ro-crate-metadata.json" }
+                  card: { type: string }
+                  files: { type: array, items: { type: object, properties: { name: { type: string }, size: { type: integer } } } }
+        "400": { description: "See publish" }
+        "409": { description: "See publish" }
+        "422": { description: "See publish" }
+  /api/publishing/publish:
+    post:
+      summary: Deposit the artefact in the user's repository account and add it to the registry.
+      requestBody: { content: { application/json: { schema: { $ref: "#/components/schemas/PublishRequest" } } } }
+      responses:
+        "201": { content: { application/json: { schema: { type: object, properties: { publication: { $ref: "#/components/schemas/Publication" } } } } } }
+        "400": { description: "code attestation_required (missing: [...]), missing_fields (missing: [...]), invalid_license, invalid_access, access_conditions_required, card_not_approved" }
+        "403": { description: "code publishing_disabled, or token_required" }
+        "404": { description: "Not the user's artefact" }
+        "409": { description: "code dataset_doi_required: a model needs its training Dataset published first (training_dataset: {id, title}); already_published" }
+        "422": { description: "code round_trip_failed: the exported model does not predict what the platform model does on the holdout (detail)" }
+        "502": { description: "code repository_failed: the repository refused or did not answer" }
+  /api/publishing/registry:
+    get:
+      summary: Published records on this platform, pointing to the repository.
+      parameters:
+        - { name: q, in: query, schema: { type: string }, description: "Search in title, description and keywords" }
+        - { name: kind, in: query, schema: { type: string, enum: [dataset, model] } }
+      responses:
+        "200": { content: { application/json: { schema: { type: object, properties: { publications: { type: array, items: { $ref: "#/components/schemas/Publication" } } } } } } }
+  /api/publishing/registry/{publication_id}:
+    get:
+      parameters: [ { name: publication_id, in: path, required: true, schema: { type: string } } ]
+      responses:
+        "200": { content: { application/json: { schema: { type: object, properties: { publication: { $ref: "#/components/schemas/Publication" } } } } } }
+        "404": { description: "Not found" }
+components:
+  schemas:
+    Config:
+      type: object
+      properties:
+        enabled: { type: boolean, description: "The host's feature gate for this user. When false every other route answers 403 publishing_disabled." }
+        repository: { type: object, properties: { id: { type: string, example: zenodo }, name: { type: string }, sandbox: { type: boolean }, token_url: { type: string, description: "Where the user creates a personal token" } } }
+        community: { type: [string, "null"] }
+        licenses: { type: array, items: { type: object, properties: { id: { type: string, example: cc-by-4.0 }, title: { type: string } } } }
+        required_fields: { type: array, items: { type: string }, description: "Metadata fields the host requires, from: title, description, creators, keywords, license, language, jurisdiction, document_type, version" }
+        access_levels: { type: array, items: { type: string, enum: [open, restricted, metadata_only] } }
+    ArtefactRef:
+      type: object
+      required: [kind, id]
+      properties:
+        kind: { type: string, enum: [dataset, model] }
+        id: { type: string }
+    Artefact:
+      type: object
+      properties:
+        kind: { type: string, enum: [dataset, model] }
+        id: { type: string }
+        title: { type: string }
+        description: { type: string }
+        task_type: { type: [string, "null"] }
+        legal: { $ref: "#/components/schemas/LegalFields" }
+        training_dataset:
+          type: [object, "null"]
+          description: Models only
+          properties:
+            id: { type: string }
+            title: { type: string }
+            doi: { type: [string, "null"] }
+        publication: { oneOf: [ { $ref: "#/components/schemas/Publication" }, { type: "null" } ] }
+    LegalFields:
+      type: object
+      properties:
+        jurisdiction: { type: [string, "null"] }
+        language: { type: [string, "null"] }
+        document_type: { type: [string, "null"] }
+        ecli: { type: [string, "null"] }
+    Creator:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, description: "Family, Given" }
+        affiliation: { type: string }
+        orcid: { type: string }
+    PublishRequest:
+      type: object
+      required: [kind, id, metadata, access, card, attestation]
+      properties:
+        kind: { type: string, enum: [dataset, model] }
+        id: { type: string }
+        metadata:
+          type: object
+          properties:
+            title: { type: string }
+            description: { type: string }
+            creators: { type: array, items: { $ref: "#/components/schemas/Creator" } }
+            keywords: { type: array, items: { type: string } }
+            license: { type: string, description: "One of config.licenses[].id" }
+            language: { type: string }
+            jurisdiction: { type: string }
+            document_type: { type: string }
+            ecli: { type: string }
+            version: { type: string }
+        access: { type: string, enum: [open, restricted, metadata_only] }
+        access_conditions: { type: string, description: "Required for restricted" }
+        card: { type: object, required: [text, approved], properties: { text: { type: string }, approved: { type: boolean } } }
+        attestation:
+          type: object
+          description: All three true, or nothing is deposited. A DOI cannot be withdrawn.
+          properties:
+            license: { type: boolean, description: "The user may release it under the chosen license" }
+            rights: { type: boolean, description: "The user holds the rights to the content" }
+            personal_data: { type: boolean, description: "It contains no personal data that may not be published" }
+    Publication:
+      type: object
+      properties:
+        id: { type: string }
+        kind: { type: string, enum: [dataset, model] }
+        artefact_id: { type: string }
+        title: { type: string }
+        doi: { type: string }
+        record_url: { type: string }
+        access: { type: string, enum: [open, restricted, metadata_only] }
+        license: { type: string }
+        related_dataset_doi: { type: [string, "null"] }
+        published_at: { type: string, format: date-time }
+        mine: { type: boolean }
