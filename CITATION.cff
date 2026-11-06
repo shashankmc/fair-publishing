@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using the metadata from this file."
+type: software
+title: "fair-publishing"
+abstract: >-
+  Publishes datasets and models from a Flask application to a research repository (Zenodo in v1) under the user's own account, with DataCite metadata, RO-Crate, a dataset or model card, legal fields and label provenance, after an attestation of license, rights and personal data. Mounts in-process with init_publishing(app, ...) and receives artefacts from the host through a provider protocol.
+authors:
+  - family-names: "Chakravarthy"
+    given-names: "Shashank"
+    affiliation: "Maastricht University"
+    # TODO(owner): add your ORCID and uncomment the next line.
+    # orcid: "https://orcid.org/XXXX-XXXX-XXXX-XXXX"
+license: MIT
+repository-code: "https://github.com/shashankmc/fair-publishing"
+url: "https://github.com/shashankmc/fair-publishing"
+version: "0.1.0"
+date-released: "2026-11-06"
+keywords:
+  - "FAIR"
+  - "research data"
+  - "Zenodo"
+  - "DataCite"
+  - "RO-Crate"
+  - "legal NLP"
+  - "Flask"

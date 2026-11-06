@@ -1,0 +1,50 @@
+{
+  "@context": "https://w3id.org/codemeta/3.0",
+  "@type": "SoftwareSourceCode",
+  "name": "fair-publishing",
+  "description": "Publishes datasets and models from a Flask application to a research repository (Zenodo in v1) under the user's own account, with DataCite metadata, RO-Crate, a dataset or model card, legal fields and label provenance, after an attestation of license, rights and personal data. Mounts in-process with init_publishing(app, ...) and receives artefacts from the host through a provider protocol.",
+  "version": "0.1.0",
+  "dateModified": "2026-11-06",
+  "datePublished": "2026-11-06",
+  "license": "https://spdx.org/licenses/MIT",
+  "codeRepository": "https://github.com/shashankmc/fair-publishing",
+  "issueTracker": "https://github.com/shashankmc/fair-publishing/issues",
+  "readme": "https://github.com/shashankmc/fair-publishing/blob/main/README.md",
+  "programmingLanguage": {
+    "@type": "ComputerLanguage",
+    "name": "Python",
+    "url": "https://www.python.org"
+  },
+  "runtimePlatform": "Python >=3.11",
+  "operatingSystem": [
+    "Linux",
+    "macOS",
+    "Windows"
+  ],
+  "softwareRequirements": [
+    "Flask>=2.3,<4",
+    "SQLAlchemy>=2.0,<3",
+    "requests>=2.31,<3"
+  ],
+  "author": [
+    {
+      "@type": "Person",
+      "givenName": "Shashank",
+      "familyName": "Chakravarthy",
+      "affiliation": {
+        "@type": "Organization",
+        "name": "Maastricht University"
+      }
+    }
+  ],
+  "keywords": [
+    "FAIR",
+    "research data",
+    "Zenodo",
+    "DataCite",
+    "RO-Crate",
+    "legal NLP",
+    "Flask"
+  ],
+  "developmentStatus": "https://www.repostatus.org/#wip"
+}
