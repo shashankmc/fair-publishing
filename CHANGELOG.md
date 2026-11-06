@@ -8,6 +8,8 @@ While the version is 0.x, minor releases may contain breaking changes.
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-11-06
+
 ### Added
 
 - `init_publishing(app, ...)`: publishing datasets and models to Zenodo under the
@@ -25,4 +27,5 @@ While the version is 0.x, minor releases may contain breaking changes.
 - Repository set up with its FAIR4RS metadata (CITATION.cff, codemeta.json,
   .zenodo.json), license, contributing guide and CI.
 
-[Unreleased]: https://github.com/shashankmc/fair-publishing/commits/main
+[Unreleased]: https://github.com/shashankmc/fair-publishing/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/shashankmc/fair-publishing/releases/tag/v0.1.0
